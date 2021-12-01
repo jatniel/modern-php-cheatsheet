@@ -21,7 +21,8 @@ This guide is not intended to teach you PHP from the ground up, but to help deve
 
 When you struggle to understand a notion, I suggest you look for answers on the following resources:
 - [Stitcher's blog](https://stitcher.io/blog)
-- [php.Watch](https://php.watch/versions)
+- [PHP.Watch](https://php.watch/versions)
+- [Exploring php 8.0](https://leanpub.com/exploringphp80)
 - [PHP The Right Way](https://phptherightway.com/)
 - [StackOverflow](https://stackoverflow.com/questions/tagged/php)
 
@@ -34,11 +35,16 @@ When you struggle to understand a notion, I suggest you look for answers on the 
     * [Table of contents](#table-of-contents)
     * [Notions](#notions)
         + [Function default parameter value](#function-default-parameter-value)
+        + [Trailing comma](#trailing-comma)
         + [Type declaration](#type-declaration)
         + [Destructuring arrays](#destructuring-arrays)
         + [Null Coalescing](#null-coalescing)
         + [Nullsafe operator](#nullsafe-operator)
         + [Spread operator](#spread-operator)
+        + [Named arguments](#named-arguments)
+        + [Short closures](#short-closures)
+        + [Match expression](#match-expression)
+        + [Stringable interface](#stringable-interface)
 
 ## Notions
 
@@ -72,6 +78,94 @@ $b = myFunction($undefined); // PHP Warning:  Undefined variable $undefined
 // $b = null
 ```
 
+### Trailing comma
+
+A trailing comma, also known as a dangling comma, is a comma symbol that is typed after the last item of a list of elements. One of the major benefits when used with multilines, is that [diff outputs are cleaner](https://medium.com/@nikgraf/why-you-should-enforce-dangling-commas-for-multiline-statements-d034c98e36f8).
+
+#### Array
+
+You can use trailing comma in arrays :
+
+```php
+$array = [
+    'foo',
+    'bar',
+];
+```
+
+#### Grouped use statement
+
+![php-version-72](https://shields.io/badge/php->=7.2-blue)
+
+Since PHP 7.2, you can use trailing comma in grouped use statement:
+
+```php
+use Symfony\Component\HttpKernel\{
+    Controller\ControllerResolverInterface,
+    Exception\NotFoundHttpException,
+    Event\PostResponseEvent,
+};
+```
+
+#### Function and method call
+
+![php-version-73](https://shields.io/badge/php->=7.3-blue)
+
+Since PHP 7.3, you can use trailing comma when calling a function:
+
+```php
+function myFunction($foo, $bar)
+{
+    return true;
+}
+$a = myFunction(
+    'baz',
+    'qux',
+);
+```
+
+and when calling a method:
+
+```php
+$f = new Foo();
+$f->myMethod(
+    'baz',
+    'qux',
+);
+```
+
+#### Function parameters
+
+![php-version-80](https://shields.io/badge/php->=8.0-blue)
+
+Since PHP 8.0, you can use trailing comma when declaring function parameters:
+
+```php
+function myFunction(
+    $foo,
+    $bar,
+)
+{
+    return true;
+}
+```
+
+#### Closure's use statement
+
+![php-version-80](https://shields.io/badge/php->=8.0-blue)
+
+Since PHP 8.0, you can use trailing comma with closure's use statement:
+
+```php
+function() use (
+    $foo,
+    $bar,
+)
+{
+    return true;
+}
+```
+
 ### Type declaration
 
 ![php-version-70](https://shields.io/badge/php->=7.0-blue)
@@ -93,7 +187,7 @@ $b = myFunction('foo'); // TypeError: myFunction(): Argument #1 ($param) must be
 You can set a return type to a function:
 
 ```php
-function myFunction() : int
+function myFunction(): int
 {
     return 'foo';
 }
@@ -103,7 +197,7 @@ $a = myFunction(); // TypeError: myFunction(): Return value must be of type int,
 When a function should not return something, you can use the type "void":
 
 ```php
-function myFunction() : void
+function myFunction(): void
 {
     return 'foo';
 }
@@ -113,7 +207,7 @@ function myFunction() : void
 You cannot return null either:
 
 ```php
-function myFunction() : void
+function myFunction(): void
 {
     return null;
 }
@@ -123,7 +217,7 @@ function myFunction() : void
 However, using return to exit the function is valid:
 
 ```php
-function myFunction() : void
+function myFunction(): void
 {
     return;
 }
@@ -135,7 +229,7 @@ $a = myFunction();
 
 ![php-version-74](https://shields.io/badge/php->=7.4-blue)
 
-You can set a return type to a class property:
+You can set a type to a class property:
 
 ```php
 Class Foo()
@@ -153,7 +247,7 @@ $f->bar = 'baz'; // TypeError: Cannot assign string to property Foo::$bar of typ
 You can use a “union type” that accepts values of multiple different types, rather than a single one:
 
 ```php
-function myFunction(string|int|array $param) : string|int|array
+function myFunction(string|int|array $param): string|int|array
 {
     return $param;
 }
@@ -196,7 +290,7 @@ $a = myFunction(null); // TypeError: myFunction(): Argument #1 ($param) must be 
 If a function has a return type, it won't accept null value either:
 
 ```php
-function myFunction() : string
+function myFunction(): string
 {
     return null;
 }
@@ -228,12 +322,12 @@ $a = myFunction(null);
 It also works with return type:
 
 ```php
-function myFunction(?string $param) : ?string
+function myFunction(?string $param): ?string
 {
     return $param;
 }
 // or
-function myFunction(string|null $param) : string|null
+function myFunction(string|null $param): string|null
 {
     return $param;
 }
@@ -242,7 +336,7 @@ function myFunction(string|null $param) : string|null
 But void cannot be nullable:
 
 ```php
-function myFunction() : ?void
+function myFunction(): ?void
 {
    // some code
 } 
@@ -252,7 +346,7 @@ function myFunction() : ?void
 or
 
 ```php
-function myFunction() : void|null
+function myFunction(): void|null
 {
    // some code
 }
@@ -357,7 +451,7 @@ list($a, $b, $c) = $array; // PHP Warning:  Undefined array key 0 ...
 // $c = null
 ```
 
-But since PHP 7.1.0 (~ dec 2016), you can destruct it with another syntax based on keys:
+But since PHP 7.1 (~ dec 2016), you can destruct it with another syntax based on keys:
 
 ```php
 list('foo' => $a, 'bar' => $b, 'baz' => $c) = $array;
@@ -747,7 +841,7 @@ $a?->foo = 'bar'; // PHP Fatal error:  Can't use nullsafe operator in write cont
 Since PHP 5.6 (~ aug 2014), you can add a variadic parameter to any function that let you use an argument lists with variable-length:
 
 ```php
-function countParameters(string $param, string ...$options) : int
+function countParameters(string $param, string ...$options): int
 {
 
     foreach ($options as $option) {
@@ -795,18 +889,19 @@ function countParameters(string $param, string ...$options = [])
 When not typed, it accepts any value:
 
 ```php
-function countParameters(string $param, ...$options) : int
+function countParameters(string $param, ...$options): int
 {
     return 1 + count($options);
 }
 
-countParameters('foo', null, [], true); // 4
+$a = countParameters('foo', null, [], true);
+// $a = 4
 ```
 
 When typed, you have to use properly typed values:
 
 ```php
-function countParameters(string $param, string ...$options) : int
+function countParameters(string $param, string ...$options): int
 {
     return 1 + count($options);
 }
@@ -825,7 +920,7 @@ countParameters('foo', []);
 Arrays and traversable objects can be unpacked into argument lists when calling functions by using the spread operator:
 
 ```php
-function add(int $a, int $b, int $c) : int
+function add(int $a, int $b, int $c): int
 {
     return $a + $b + $c;
 }
@@ -838,7 +933,7 @@ $r = add(1, ...$array);
 The given array can have more elements than needed:
 
 ```php
-function add(int $a, int $b, int $c) : int
+function add(int $a, int $b, int $c): int
 {
     return $a + $b + $c;
 }
@@ -851,7 +946,7 @@ $r = add(1, ...$array);
 The given array can't have lesser elements than needed:
 
 ```php
-function add(int $a, int $b, int $c) : int
+function add(int $a, int $b, int $c): int
 {
     return $a + $b + $c;
 }
@@ -862,7 +957,7 @@ $r = add(1, ...$array); // TypeError: Too few arguments to function add(), 2 pas
 Except when some function arguments have a default value:
 
 ```php
-function add(int $a, int $b, int $c = 0) : int
+function add(int $a, int $b, int $c = 0): int
 {
     return $a + $b + $c;
 }
@@ -874,7 +969,7 @@ $r = add(1, ...$array);
 If an argument is typed and the passed value does not match the given type, you'll get an error:
 
 ```php
-function add(int $a, int $b, int $c) : int
+function add(int $a, int $b, int $c): int
 {
     return $a + $b + $c;
 }
@@ -882,50 +977,7 @@ $array = ['foo', 'bar'];
 $r = add(1, ...$array); // TypeError: add(): Argument #2 ($b) must be of type int, string given
 ```
 
-It is possible to use an associative array, but keys should match arguments names
-
-```php
-function add(int $a, int $b, int $c) : int
-{
-    return $a + $b + $c;
-}
-$array = [
-    "b" => 2,
-    "c" => 3
-];
-$r = add(1, ...$array);
-// $r = 6
-```
-
-Order of the elements in the associative array doesn't matter:
-
-```php
-function add(int $a, int $b, int $c) : int
-{
-    return $a + $b + $c;
-}
-$array = [
-    "c" => 3,
-    "b" => 2,
-];
-$r = add(1, ...$array);
-// $r = 6
-```
-
-If a key doesn't match an argument's name, you'll get an error:
-
-```php
-function add(int $a, int $b, int $c) : int
-{
-    return $a + $b + $c;
-}
-$array = [
-    "b" => 2,
-    "c" => 3,
-    "d" => 4,
-];
-$r = add(1, ...$array); // PHP Error:  Unknown named parameter $d
-```
+Since PHP 8.0, it is possible to unpack an associative array as it will use [named arguments](#unpacking-named-arguments).
 
 #### Array unpacking
 
@@ -1009,10 +1061,355 @@ $array2 = ['foo', ...$array1]; // PHP Error:  Only arrays and Traversables can b
 You can unpack the result of a function/method:
 
 ```php
-function getArray() : array {
-  return ['foo', 'bar'];
+function getArray(): array
+{
+    return ['foo', 'bar'];
 }
 
 $array = [...getArray(), 'baz']; 
 // $array = ['foo', 'bar', 'baz']
+```
+
+### Named arguments
+
+![php-version-80](https://shields.io/badge/php->=8.0-blue)
+
+Since PHP 8.0, it is possible to pass in arguments by name instead of their position.
+
+Considering a function like this:
+
+```php
+function concat(string $first, string $second): string
+{
+    return $first . ' ' . $second;
+}
+$a = concat('foo', 'bar');
+// $a = 'foo bar'
+```
+
+You can have the same result with the named argument syntax:
+
+```php
+$a = concat(first: 'foo', second: 'bar');
+// $a = 'foo bar'
+```
+
+You can call it with arguments in a different order:
+
+```php
+$a = concat(second: 'bar', first: 'foo');
+// $a = 'foo bar'
+```
+
+You can skip optional parameters:
+
+```php
+function orGate(bool $option1 = false, bool $option2 = false, bool $option3 = false): bool
+{
+   return $option1 || $option2 || $option3;
+}
+$a = orGate(option3: true);
+// $a = true
+```
+
+But you cannot skip a mandatory argument:
+
+```php
+$a = concat(second: 'bar');
+// TypeError: concat(): Argument #1 ($first) not passed
+```
+
+You cannot include some extra arguments:
+
+```php
+$a = concat(first: 'foo', second: 'bar', third: 'baz');
+// PHP Error:  Unknown named parameter $third
+```
+
+Named arguments also work with object constructor:
+
+```php
+Class Foo()
+{
+    public function __construct(
+        public string $first,
+        public string $second
+    ) {}
+    
+}
+$f = new Foo(first: 'bar', second: 'baz');
+```
+
+#### Named variadics
+
+You can use named arguments with a variadic parameter:
+
+```php
+function showParams(string ...$params): array
+{
+    return $params;
+}
+$a = showParams(first: 'foo', second: 'bar', third: 'baz');
+// $a = ["first" => "foo", "second" => "bar", "third" => "baz"]
+```
+
+#### Unpacking named arguments
+
+You can unpack an associative array as named arguments if keys match arguments names:
+
+```php
+function add(int $a, int $b, int $c): int
+{
+    return $a + $b + $c;
+}
+$array = [
+    "b" => 2,
+    "c" => 3
+];
+$r = add(1, ...$array);
+// $r = 6
+```
+
+Order of the elements in the associative array doesn't matter:
+
+```php
+function add(int $a, int $b, int $c): int
+{
+    return $a + $b + $c;
+}
+$array = [
+    "c" => 3,
+    "b" => 2,
+];
+$r = add(1, ...$array);
+// $r = 6
+```
+
+If a key doesn't match an argument's name, you'll get an error:
+
+```php
+function add(int $a, int $b, int $c): int
+{
+    return $a + $b + $c;
+}
+$array = [
+    "b" => 2,
+    "c" => 3,
+    "d" => 4,
+];
+$r = add(1, ...$array); // PHP Error:  Unknown named parameter $d
+```
+
+#### External resource
+
+- [Named arguments in depth on stitcher's blof](https://stitcher.io/blog/php-8-named-arguments)
+- [Named Parameters on PHP.Watch](https://php.watch/versions/8.0/named-parameters)
+
+### Short closures
+
+![php-version-74](https://shields.io/badge/php->=7.4-blue)
+
+Short closures, also called arrow functions, are an alternative way of writing [anonymous functions](https://www.php.net/manual/en/functions.anonymous.php) in a shorter syntax. The main goal of short closures is to reduce verbosity when it is possible : if there is only a single expression.
+
+Here is an example of a simple closure with only one expression :
+
+```php
+$foo = function ($bar) {
+    return $bar + 1;
+}
+$a = $foo(1);
+// $a = 2
+```
+
+You can write the same function with a short closure :
+
+```php
+$foo = fn ($bar) => $bar + 1;
+$a = $foo(1);
+// $a = 2
+```
+
+You cannot give a name to a short closure :
+
+```php
+fn foo($bar) => $bar + 1;
+// PHP Parse error: Syntax error, unexpected T_STRING, expecting '('
+```
+
+You can use short closure as function parameter. For example as a "callable" parameter in PHP's [array_reduce](https://www.php.net/manual/en/function.array-reduce.php):
+
+```php
+$myArray = [10,20,30];
+
+$total = array_reduce($myArray, fn ($carry, $item) => $carry + $item, 0);
+// $total = 60
+```
+
+Type hinting is allowed as in a normal function :
+
+```php
+fn (int $foo): int => $foo;
+```
+
+You don't need to use the `return` keyword as it is not allowed here :
+
+```php
+fn ($foo) => return $foo;
+// PHP Parse error: Syntax error, unexpected T_RETURN
+```
+
+#### Outer scope
+
+The short closure doesn't require the `use` keyword to be able to access properties from the outer scope :
+
+```php
+$bar = 10;
+$baz = fn ($foo) => $foo + $bar;
+$a = $baz(1);
+//$a = 11
+```
+
+The keyword `use` is not allowed :
+
+```php
+$bar = 10;
+fn ($foo) use ($bar) => $foo + $bar;
+// PHP Parse error: Syntax error, unexpected T_USE, expecting T_DOUBLE_ARROW
+```
+
+You could use `$this` as in any other function :
+
+```php
+fn () => $this->foo + 1;
+```
+
+### Match expression
+
+![php-version-80](https://shields.io/badge/php->=8.0-blue)
+
+Since PHP 8.0, there is a new `match` syntax similar to the `switch` syntax. As each matching case must only contain one expression, it can't be used and replace a switch statement in every situation. It is significantly shorter and easier to read though.
+
+The match expression always returns a value. Each condition only allows a single expression, and it immediately returns the value and will not fall-through following conditions without an explicit `break` statement:
+
+```php
+$foo = 'baz';
+$a = match($foo) {
+    'bar' => 1,
+    'baz' => 2,
+    'qux' => 3,
+}
+// $a = 2
+```
+
+It throws an exception when the value can't match:
+
+```php
+$foo = 'qux';
+$a = match($foo) {
+    'bar' => 1,
+    'baz' => 2,
+}
+// PHP Error:  Unhandled match value of type string
+```
+
+But it supports a default condition:
+
+```php
+$foo = 'qux';
+$a = match($foo) {
+    'bar' => 1,
+    'baz' => 2,
+    default => 3,
+}
+// $a = 3
+```
+
+It allows multiple conditions in a single arm:
+
+```php
+$foo = 'bar';
+$a = match($foo) {
+    'bar', 'baz' => 1,
+    default => 2,
+}
+// $a = 1
+```
+
+It does strict type-safe comparison without type coercion (it's like using `===` instead of `==`):
+
+```php
+function showType($param) {
+    return match ($param) {
+        1 => 'Integer',
+        '1' => 'String',
+        true => 'Boolean',
+    };
+}
+
+showType(1); // "Integer"
+showType('1'); // "String"
+showType(true); // "Boolean"
+```
+
+#### External resource
+
+- [Match expression on PHP.Watch](https://php.watch/versions/8.0/match-expression)
+
+### Stringable interface
+
+![php-version-80](https://shields.io/badge/php->=8.0-blue)
+
+Since PHP 8.0, there is a new interface named `Stringable`, that indicates a class has a `__toString()` magic method. PHP automatically adds the Stringable interface to all classes that implement that method.
+
+```php
+interface Stringable {
+    public function __toString(): string;
+}
+```
+
+When you define a parameter with `Stringable` type, it will check that the given class implements the `Stringable` interface:
+
+```php
+class Foo {
+    public function __toString(): string {
+        return 'bar';
+    }
+}
+
+function myFunction(Stringable $param): string {
+    return (string) $param;
+}
+$a = myFunction(new Foo);
+// $a = 'bar'
+```
+
+If a given class doesn't implement `__toString()`, you'll get an error:
+
+```php
+class Foo {
+}
+
+function myFunction(Stringable $param): string {
+    return (string) $param;
+}
+$a = myFunction(new Foo);
+// TypeError: myFunction(): Argument #1 ($param) must be of type Stringable, Foo given
+```
+
+A stringable type doesn't accept string:
+
+```php
+function myFunction(Stringable $param): string {
+    return (string) $param;
+}
+$a = myFunction('foo');
+// TypeError: myFunction(): Argument #1 ($param) must be of type Stringable, string given
+```
+
+Of course, to accept both string and Stringable, you can use a union type:
+
+```php
+function myFunction(string|Stringable $param): string {
+    return (string) $param;
+}
 ```
