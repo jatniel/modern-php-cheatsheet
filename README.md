@@ -15,7 +15,7 @@ This document is a cheatsheet for PHP you will frequently encounter in modern pr
 
 This guide is not intended to teach you PHP from the ground up, but to help developers with basic knowledge who may struggle to get familiar with modern codebases (or let's say to learn Laravel or Symfony for instance) because of the new PHP concepts and features introduced over the years.
 
-> **Note:** Concepts introduced here are based on the most recent version of PHP available ([PHP 8.0](https://www.php.net/releases/8.0/en.php) at the time of the last update)
+> **Note:** Concepts introduced here are based on the most recent version of PHP available ([PHP 8.1](https://www.php.net/releases/8.1/en.php) at the time of the last update)
 
 ### Complementary Resources
 
@@ -26,12 +26,27 @@ When you struggle to understand a notion, I suggest you look for answers on the 
 - [PHP The Right Way](https://phptherightway.com/)
 - [StackOverflow](https://stackoverflow.com/questions/tagged/php)
 
+### Recent PHP releases
+
+| Version                                      |Release date|
+|----------------------------------------------|---|
+| [PHP 8.1](https://www.php.net/releases/8.1/en.php) |November 2021|
+| [PHP 8.0](https://www.php.net/releases/8.0/en.php) |November 2020|
+| PHP 7.4                                      |November 2019|
+| PHP 7.3                                      |December 2018|
+| PHP 7.2                                      |November 2017|
+| PHP 7.1                                      |December 2016|
+| PHP 7.0                                      |December 2015|
+
+More infos on [php.net](https://www.php.net/supported-versions.php).
+
 ## Table of Contents
 
 - [Modern PHP cheatsheet](#modern-php-cheatsheet)
     * [Introduction](#introduction)
         + [Motivation](#motivation)
         + [Complementary resources](#complementary-resources)
+        + [Recent PHP releases](#recent-php-releases)
     * [Table of contents](#table-of-contents)
     * [Notions](#notions)
         + [Function default parameter value](#function-default-parameter-value)
@@ -232,7 +247,7 @@ $a = myFunction();
 You can set a type to a class property:
 
 ```php
-Class Foo()
+Class Foo
 {
     public int $bar;
 }
@@ -244,7 +259,7 @@ $f->bar = 'baz'; // TypeError: Cannot assign string to property Foo::$bar of typ
 
 ![php-version-80](https://shields.io/badge/php->=8.0-blue)
 
-You can use a “union type” that accepts values of multiple different types, rather than a single one:
+Since PHP 8.0, you can use a “union type” that accepts values of multiple different types, rather than a single one:
 
 ```php
 function myFunction(string|int|array $param): string|int|array
@@ -256,11 +271,55 @@ function myFunction(string|int|array $param): string|int|array
 It also works with class property:
 
 ```php
-Class Foo()
+Class Foo
 {
     public string|int|array $bar;
 }
 ```
+
+#### Intersection type
+
+![php-version-81](https://shields.io/badge/php->=8.1-blue)
+
+Since PHP 8.1, you can use an "intersection type" (also known as "pure") that enforce that a given value belong to every types. For example this param needs to implement both *Stringable* and *Countable* interfaces:
+
+```php
+function myFunction(Stringable&Countable $param): Stringable&Countable
+{
+    return $param;
+}
+Class Foo
+{
+    public function __toString() {
+        return "something";
+    }
+}
+myFunction(new Foo());
+// TypeError: myFunction(): Argument #1 ($param) must be of type Stringable&Countable, Foo given
+```
+
+It also works with class property:
+
+```php
+Class Foo
+{
+    public Stringable&Countable $bar;
+}
+```
+
+Intersection type only supports class and interfaces. Scalar types (string, int, array, null, mixed, etc) are not allowed:
+
+```php
+function myFunction(string&Countable $param)
+{
+    return $param;
+}
+// PHP Fatal error:  Type string cannot be part of an intersection type
+```
+
+##### External resource
+
+- [Intersection types on PHP.Watch](https://php.watch/versions/8.1/intersection-types)
 
 #### Nullable type
 
@@ -356,7 +415,7 @@ function myFunction(): void|null
 You can set a nullable type to a class property:
 
 ```php
-Class Foo()
+Class Foo
 {
     public int|null $bar;
 }
@@ -451,7 +510,7 @@ list($a, $b, $c) = $array; // PHP Warning:  Undefined array key 0 ...
 // $c = null
 ```
 
-But since PHP 7.1 (~ dec 2016), you can destruct it with another syntax based on keys:
+But since PHP 7.1, you can destruct it with another syntax based on keys:
 
 ```php
 list('foo' => $a, 'bar' => $b, 'baz' => $c) = $array;
@@ -492,7 +551,7 @@ list('moe' => $d) = $array; // PHP Warning:  Undefined array key "moe"
 
 ![php-version-70](https://shields.io/badge/php->=7.0-blue)
 
-Since PHP 7.0 (~ dec 2015), you can use the null coalescing operator to provide a fallback when a property is null with no error nor warning:
+Since PHP 7.0, you can use the null coalescing operator to provide a fallback when a property is null with no error nor warning:
 
 ```php
 $a = null;
@@ -838,7 +897,7 @@ $a?->foo = 'bar'; // PHP Fatal error:  Can't use nullsafe operator in write cont
 
 ![php-version-56](https://shields.io/badge/php->=5.6-blue)
 
-Since PHP 5.6 (~ aug 2014), you can add a variadic parameter to any function that let you use an argument lists with variable-length:
+Since PHP 5.6 (~ august 2014), you can add a variadic parameter to any function that let you use an argument lists with variable-length:
 
 ```php
 function countParameters(string $param, string ...$options): int
@@ -977,7 +1036,7 @@ $array = ['foo', 'bar'];
 $r = add(1, ...$array); // TypeError: add(): Argument #2 ($b) must be of type int, string given
 ```
 
-Since PHP 8.0, it is possible to unpack an associative array as it will use [named arguments](#unpacking-named-arguments).
+Since PHP 8.0, it is possible to unpack an associative array (string-keyed) as it will use [named arguments](#unpacking-named-arguments).
 
 #### Array unpacking
 
@@ -995,7 +1054,7 @@ $array3 = array_merge($array1,$array2);
 // $array3 = ['baz', 'foo', 'bar']
 ```
 
-But since PHP 7.4 (~ nov 2019), you can unpack indexed arrays, with spread operator:
+But since PHP 7.4, you can unpack indexed arrays, with spread operator:
 
 ```php
 $array1 = ['foo', 'bar'];
@@ -1070,6 +1129,43 @@ $array = [...getArray(), 'baz'];
 // $array = ['foo', 'bar', 'baz']
 ```
 
+##### Associative array
+
+![php-version-81](https://shields.io/badge/php->=8.1-blue)
+
+Since php 8.1, you can unpack associative array (string-keyed):
+
+```php
+$array1 = ['foo' => 'bar'];
+$array2 = [
+   'baz' => 'qux', 
+   ...$array1
+];
+// $array2 = ['baz' => 'qux', 'foo' => 'bar',]
+```
+
+You can unpack array with an already existing key:
+
+```php
+$array1 = ['foo' => 'bar'];
+$array2 = [
+   'foo' => 'baz', 
+   ...$array1
+];
+// $array2 = ['foo' => 'bar',]
+```
+
+You can unpack an empty array without error nor warning:
+
+```php
+$array1 = [];
+$array2 = [
+   ...$array1,
+   ...[]
+];
+// $array2 = []
+```
+
 ### Named arguments
 
 ![php-version-80](https://shields.io/badge/php->=8.0-blue)
@@ -1129,7 +1225,7 @@ $a = concat(first: 'foo', second: 'bar', third: 'baz');
 Named arguments also work with object constructor:
 
 ```php
-Class Foo()
+Class Foo
 {
     public function __construct(
         public string $first,
